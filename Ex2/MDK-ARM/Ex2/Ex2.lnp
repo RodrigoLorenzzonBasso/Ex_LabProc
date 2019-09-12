@@ -1,0 +1,26 @@
+--cpu Cortex-M0
+"ex2\startup_stm32f072xb.o"
+"ex2\main.o"
+"ex2\stm32f0xx_it.o"
+"ex2\stm32f0xx_hal_msp.o"
+"ex2\stm32f0xx_hal_tim.o"
+"ex2\stm32f0xx_hal_tim_ex.o"
+"ex2\stm32f0xx_hal_uart.o"
+"ex2\stm32f0xx_hal_uart_ex.o"
+"ex2\stm32f0xx_hal_rcc.o"
+"ex2\stm32f0xx_hal_rcc_ex.o"
+"ex2\stm32f0xx_hal.o"
+"ex2\stm32f0xx_hal_i2c.o"
+"ex2\stm32f0xx_hal_i2c_ex.o"
+"ex2\stm32f0xx_hal_gpio.o"
+"ex2\stm32f0xx_hal_dma.o"
+"ex2\stm32f0xx_hal_cortex.o"
+"ex2\stm32f0xx_hal_pwr.o"
+"ex2\stm32f0xx_hal_pwr_ex.o"
+"ex2\stm32f0xx_hal_flash.o"
+"ex2\stm32f0xx_hal_flash_ex.o"
+"ex2\system_stm32f0xx.o"
+--library_type=microlib --strict --scatter "Ex2\Ex2.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "Ex2.map" -o Ex2\Ex2.axf
