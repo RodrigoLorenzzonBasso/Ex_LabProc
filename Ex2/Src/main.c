@@ -125,17 +125,19 @@ int main(void)
 		
 		for(k=0;k<100;k++)
 		{
-			for(n=0;n<50;n++)
+			for(n=0;n<10;n++)
 			{
 				GPIOB->ODR = T[k/10];
-				GPIOC->ODR = 2;
-				HAL_Delay(10);
-				GPIOB->ODR = T[k%10];
 				GPIOC->ODR = 1;
 				HAL_Delay(10);
+				GPIOB->ODR = T[k%10];
+				GPIOC->ODR = 2;
+				HAL_Delay(10);
 			}
+			
+			
 		}
-		
+	
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
