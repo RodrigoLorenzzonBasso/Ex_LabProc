@@ -91,7 +91,10 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	
-	int k,n;
+	int k = 0;
+	int s1,s2;
+	
+	int estados = 0;
 
   /* USER CODE END 1 */
 
@@ -123,20 +126,90 @@ int main(void)
   while (1)
   {
 		
-		for(k=0;k<100;k++)
+		for(int n = 0; n < 50; n++)
 		{
-			for(n=0;n<10;n++)
+			GPIOB->ODR = T[k/10];
+			GPIOC->ODR = 1;
+			HAL_Delay(5);
+			GPIOB->ODR = T[k%10];
+			GPIOC->ODR = 2;
+			HAL_Delay(5);
+		}
+		
+		s2 = GPIOA->IDR & (1<<8);
+		s1 = GPIOA->IDR & (1<<9);
+		
+		if(estados == 0)
+		{
+			if(s2 != 0)
 			{
-				GPIOB->ODR = T[k/10];
-				GPIOC->ODR = 1;
-				HAL_Delay(10);
-				GPIOB->ODR = T[k%10];
-				GPIOC->ODR = 2;
-				HAL_Delay(10);
+				estados = 1;
 			}
 			
-			
+			if(s1 != 0)
+			{
+				estados = 2;
+			}
 		}
+		else if(estados == 1)
+		{
+			
+			if(s2 != 0)
+			{
+				estados = 1;
+			}
+			else if(s2 == 0)
+			{
+				estados = 3;
+			}
+		}
+		else if(estados == 2)
+		{
+			if(s2 != 0)
+			{
+			}
+			
+			if(s1 != 0)
+			{
+				estados = 2;
+			}
+			else if(s1 == 0)
+			{
+				estados = 4;
+			}
+		}
+		else if(estados == 3)
+		{
+			if(s2 != 0)
+			{
+				estados = 0;
+			}
+			
+			if(s1 != 0)
+			{
+				k++;
+				estados = 0;
+			}
+		}
+		else if(estados == 4)
+		{
+			if(s1 != 0)
+			{
+				estados = 0;
+			}
+			
+			if(s2 != 0)
+			{
+				k--;
+				estados = 0;
+			}
+		}
+		
+		if(k >= 100)
+			k = 0;
+		
+		if(k < 0)
+			k = 99;
 	
     /* USER CODE END WHILE */
 
@@ -272,6 +345,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA8 PA9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
 
