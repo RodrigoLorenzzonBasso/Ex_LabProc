@@ -42,6 +42,134 @@ static void MX_USART2_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+#define pino_rs_0   GPIOA->BSRR = 1<<(16+9)  
+#define pino_rs_1	GPIOA->BSRR = 1<<9
+#define pino_e_0	GPIOC->BSRR = 1<<(16+7)
+#define pino_e_1	GPIOC->BSRR = 1<<7
+
+#define cursor_on 	 0x0c
+#define cursor_off   0x0e
+#define cursor_blink 0x0f
+
+#define liga_led GPIOA->BSRR = (1 << 5);
+#define desliga_led GPIOA->BRR = (1 << 5);
+
+
+void uDelay(void)
+{
+  int x=10;
+	
+  while(x) x--;
+}
+
+void delayUs(int tempo)
+{
+  while(tempo--) uDelay();
+}
+void lcd_send4bits(unsigned char dat)
+{
+	if((dat & (1 << 0)) == 0)
+		GPIOB->BRR = (1 << 5);
+	else
+		GPIOB->BSRR = (1 << 5);
+	
+	if((dat & (1 << 1)) == 0)
+		GPIOB->BRR = (1 << 4);
+	else
+		GPIOB->BSRR = (1 << 4);
+
+	if((dat & (1 << 2)) == 0)
+		GPIOB->BRR = (1 << 10);
+	else
+		GPIOB->BSRR = (1 << 10);
+	
+	if((dat & (1 << 3)) == 0)
+		GPIOA->BRR = (1 << 8);
+	else
+		GPIOA->BSRR = (1 << 8);	
+}
+
+
+void lcd_wrcom4(unsigned char com)
+{
+	lcd_send4bits(com);
+	pino_rs_0;
+	pino_e_1;
+	delayUs(5);
+	pino_e_0;
+	HAL_Delay(5);
+}
+
+void lcd_wrcom(unsigned char com)
+{
+	lcd_send4bits(com/0x10);
+	pino_rs_0;
+	pino_e_1;
+	delayUs(5);
+	pino_e_0;
+	
+	lcd_send4bits(com%0x10);
+	pino_rs_0;
+	pino_e_1;
+	delayUs(5);
+	pino_e_0;
+	
+	HAL_Delay(5);
+}
+
+
+void lcd_wrchar(unsigned char ch)
+{
+	lcd_send4bits(ch/0x10);
+	pino_rs_1;
+	pino_e_1;
+	delayUs(5);
+	pino_e_0;
+	
+	lcd_send4bits(ch % 0x10);
+	pino_rs_1;
+	pino_e_1;
+	delayUs(5);
+	pino_e_0;
+	
+	HAL_Delay(5);
+}
+void lcd_init(unsigned char cursor)
+{
+	lcd_wrcom4(3);
+  lcd_wrcom4(3);
+  lcd_wrcom4(3);
+  lcd_wrcom4(2);
+
+  lcd_wrcom(0x28);
+  lcd_wrcom(cursor);
+  lcd_wrcom(0x06);
+  lcd_wrcom(0x01);
+
+}
+
+void lcd_goto(unsigned char x, unsigned char y)
+{
+  if(x<16)
+  {
+    if(y==0) lcd_wrcom(0x80+x);
+    if(y==1) lcd_wrcom(0xc0+x);
+    if(y==2) lcd_wrcom(0x90+x);
+    if(y==3) lcd_wrcom(0xd0+x);
+  }
+}
+
+void configura_portas(void)
+{
+	
+	GPIOB->MODER = (1 << 20) + (1 << 8) + (1 << 10) + (1 << 12);
+	GPIOA->MODER = (1 << 16) + (1 << 18) + (1 << 5);
+	GPIOC->MODER = (1 << 14);
+	
+}
+
+
+
 /* USER CODE END 0 */
 
 /**
@@ -51,7 +179,6 @@ static void MX_USART2_UART_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -74,6 +201,11 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+	configura_portas();
+	lcd_init(cursor_on);
+	GPIOB->BSRR = (1 << 6);
+	lcd_goto(8,0);
+	lcd_wrchar('x');
 
   /* USER CODE END 2 */
 
