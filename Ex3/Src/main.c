@@ -55,6 +55,7 @@ static void MX_USART2_UART_Init(void);
 #define desliga_led GPIOA->BRR = (1 << 5);
 
 
+
 void uDelay(void)
 {
   int x=10;
@@ -159,16 +160,105 @@ void lcd_goto(unsigned char x, unsigned char y)
   }
 }
 
-void configura_portas(void)
+void lcd_wrstr(char * str)
 {
-	
-	GPIOB->MODER = (1 << 20) + (1 << 8) + (1 << 10) + (1 << 12);
-	GPIOA->MODER = (1 << 16) + (1 << 18) + (1 << 5);
-	GPIOC->MODER = (1 << 14);
-	
+	while((*str))
+	{
+		lcd_wrchar(*str++);
+	}
 }
 
 
+int le_teclas(void)
+{
+	int tecla = 12;
+	
+	GPIOB->BSRR = (1<<(16+7));
+	GPIOC->BSRR = (1<<12) + (1<<11) + (1<<10);
+	
+	if((GPIOA->IDR & (1<<15)) == 0)
+	{
+		tecla = 1;
+	}
+	else if((GPIOB->IDR & (1<<2)) == 0)
+	{
+		tecla = 2;
+	}
+	else if((GPIOB->IDR & (1<<11)) == 0)
+	{
+		tecla = 3;
+	}
+	
+	GPIOB->BSRR = (1<<(7));
+	GPIOC->BSRR = (1<<(12+16)) + (1<<11) + (1<<10);
+	
+	if((GPIOA->IDR & (1<<15)) == 0)
+	{
+		tecla = 4;
+	}
+	else if((GPIOB->IDR & (1<<2)) == 0)
+	{
+		tecla = 5;
+	}
+	else if((GPIOB->IDR & (1<<11)) == 0)
+	{
+		tecla = 6;
+	}
+	
+	GPIOB->BSRR = (1<<(7));
+	GPIOC->BSRR = (1<<(12)) + (1<<(11+16)) + (1<<10);
+	
+	if((GPIOA->IDR & (1<<15)) == 0)
+	{
+		tecla = 7;
+	}
+	else if((GPIOB->IDR & (1<<2)) == 0)
+	{
+		tecla = 8;
+	}
+	else if((GPIOB->IDR & (1<<11)) == 0)
+	{
+		tecla = 9;
+	}
+	
+	GPIOB->BSRR = (1<<7);
+	GPIOC->BSRR = (1<<(12)) + (1<<11) + (1<<(10+16));
+	
+	if((GPIOA->IDR & (1<<15)) == 0)
+	{
+		tecla = 10;
+	}
+	else if((GPIOB->IDR & (1<<2)) == 0)
+	{
+		tecla = 0;
+	}
+	else if((GPIOB->IDR & (1<<11)) == 0)
+	{
+		tecla = 11;
+	}
+	
+	return tecla;
+	
+}
+
+int aguarda_tecla(void)
+{
+	int tecla = 12;
+	
+	while(le_teclas()==12)
+	{
+	
+	}
+	
+	tecla = le_teclas();
+	
+	while(le_teclas() != 12)
+	{
+	
+	}
+	
+	return tecla;
+}
 
 /* USER CODE END 0 */
 
@@ -179,6 +269,27 @@ void configura_portas(void)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+	
+	int hora, min, seg, h, m, s;
+	
+	int dia, mes, ano, d, mm, a;
+	
+	int pegador = 0;
+	
+	int tecla;
+	
+	int n_dias = 0;
+	
+	char str[30];
+	
+	d = 31;
+	mm = 12;
+	a = 2016;
+	
+	h = 0;
+	m = 0;
+	s = 0;
+	
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -201,11 +312,44 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-	configura_portas();
-	lcd_init(cursor_on);
+	lcd_init(cursor_blink);
 	GPIOB->BSRR = (1 << 6);
-	lcd_goto(8,0);
-	lcd_wrchar('x');
+
+	/*tecla = 0;
+	
+	while(tecla != 10)
+	{
+		lcd_goto(8,1);
+		sprintf(str,"%02d",h);
+		lcd_wrstr(str);
+		
+		tecla = aguarda_tecla();
+		
+		lcd_goto(0,0);
+		sprintf(str,"%02d",tecla);
+		lcd_wrstr(str);
+		
+		if(tecla == 11)
+			h = 0;
+		else
+		{
+			if(pegador == 0)
+			{
+				h = tecla * 10;
+				pegador = 1;
+			}
+			else if(pegador == 1)
+			{
+				h += tecla;
+				pegador = 2;
+			}
+			else if(pegador == 2)
+			{
+				
+			}
+		}
+	}*/
+
 
   /* USER CODE END 2 */
 
@@ -213,6 +357,51 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+		for(ano = a; ano < 9999; ano++)
+		{
+			for(mes = mm; mes <= 12; mes++)
+			{
+				
+				if(mes == 1 || mes == 3 || mes == 5 || mes == 7 || mes == 8 || mes == 10 || mes == 12)
+				{
+					n_dias = 31;
+				}
+				else if(mes == 2)
+				{
+					if((ano%400 == 0) || ((ano%4 == 0) && (ano%100 != 0)))
+					{
+						n_dias = 29;
+					}
+					else
+						n_dias = 28;
+				}
+				else
+					n_dias = 30;
+				
+				for(dia = d; dia <= n_dias; dia++)
+				{
+					for(hora = h; hora < 24; hora++)
+					{
+						for(min = m; min < 60; min++)
+						{
+							for(seg = s; seg < 60; seg++)
+							{
+								lcd_goto(8,1);
+								sprintf(str,"%02d:%02d:%02d",hora,min,seg);
+								lcd_wrstr(str);
+								
+								lcd_goto(6,0);
+								sprintf(str,"%02d/%02d/%04d",dia,mes,ano);
+								lcd_wrstr(str);
+								
+								HAL_Delay(900);						
+							}s = 0;
+						}m = 0;
+					}h = 0;
+				}d = 1;
+			}mm = 1;
+		}a = 0;
+		
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -307,9 +496,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6 
+                          |GPIO_PIN_7, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -317,12 +514,52 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
+  /*Configure GPIO pins : LD2_Pin PA8 PA9 */
+  GPIO_InitStruct.Pin = LD2_Pin|GPIO_PIN_8|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB2 PB11 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_11;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB10 PB4 PB5 PB6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PC7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PC10 PC11 PC12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 
