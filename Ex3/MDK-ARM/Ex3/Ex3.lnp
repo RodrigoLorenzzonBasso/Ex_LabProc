@@ -3,6 +3,8 @@
 "ex3\main.o"
 "ex3\stm32f0xx_it.o"
 "ex3\stm32f0xx_hal_msp.o"
+"ex3\stm32f0xx_hal_adc.o"
+"ex3\stm32f0xx_hal_adc_ex.o"
 "ex3\stm32f0xx_hal_tim.o"
 "ex3\stm32f0xx_hal_tim_ex.o"
 "ex3\stm32f0xx_hal_uart.o"

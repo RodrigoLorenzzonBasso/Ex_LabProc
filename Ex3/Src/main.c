@@ -25,6 +25,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc;
+
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -35,6 +37,7 @@ UART_HandleTypeDef huart2;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_ADC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -169,97 +172,175 @@ void lcd_wrstr(char * str)
 }
 
 
-int le_teclas(void)
+int le_AD(void)
 {
-	int tecla = 12;
+	HAL_ADC_Start(&hadc);
+	HAL_ADC_PollForConversion(&hadc,50);
+	int X = HAL_ADC_GetValue(&hadc);
+  HAL_ADC_Stop(&hadc);
+	return X;
+}
+void print_AD(int v)
+{
+	char str[30];
+	sprintf(str,"%04d",v);
+	lcd_goto(0,0);
+	lcd_wrstr(str);
+}
+int le_teclas(void) // 0 nada 3 down 4 up 1 select 2 left 5 rigth
+{
+	// rigth == 0
+	// 550 <= up <= 620
+	// 1470 <= down <= 1500
+	// 2400 <= left <= 2550
+	// 3600 <= select <= 3700
+	int tecla = 0; // nada
+		
+	int v = le_AD();
+	//print_AD(v);
 	
-	GPIOB->BSRR = (1<<(16+7));
-	GPIOC->BSRR = (1<<12) + (1<<11) + (1<<10);
-	
-	if((GPIOA->IDR & (1<<15)) == 0)
-	{
-		tecla = 1;
-	}
-	else if((GPIOB->IDR & (1<<2)) == 0)
-	{
-		tecla = 2;
-	}
-	else if((GPIOB->IDR & (1<<11)) == 0)
-	{
-		tecla = 3;
-	}
-	
-	GPIOB->BSRR = (1<<(7));
-	GPIOC->BSRR = (1<<(12+16)) + (1<<11) + (1<<10);
-	
-	if((GPIOA->IDR & (1<<15)) == 0)
-	{
-		tecla = 4;
-	}
-	else if((GPIOB->IDR & (1<<2)) == 0)
-	{
+	if(v < 400)
 		tecla = 5;
-	}
-	else if((GPIOB->IDR & (1<<11)) == 0)
-	{
-		tecla = 6;
-	}
-	
-	GPIOB->BSRR = (1<<(7));
-	GPIOC->BSRR = (1<<(12)) + (1<<(11+16)) + (1<<10);
-	
-	if((GPIOA->IDR & (1<<15)) == 0)
-	{
-		tecla = 7;
-	}
-	else if((GPIOB->IDR & (1<<2)) == 0)
-	{
-		tecla = 8;
-	}
-	else if((GPIOB->IDR & (1<<11)) == 0)
-	{
-		tecla = 9;
-	}
-	
-	GPIOB->BSRR = (1<<7);
-	GPIOC->BSRR = (1<<(12)) + (1<<11) + (1<<(10+16));
-	
-	if((GPIOA->IDR & (1<<15)) == 0)
-	{
-		tecla = 10;
-	}
-	else if((GPIOB->IDR & (1<<2)) == 0)
-	{
+	else if(v >= 400 && v < 1200)
+		tecla = 4;
+	else if(v >= 1200 && v < 2000)
+		tecla = 3;
+	else if(v >= 2000 && v < 3200)
+		tecla = 2;
+	else if(v >= 3200 && v < 4000)
+		tecla = 1;
+	else
 		tecla = 0;
-	}
-	else if((GPIOB->IDR & (1<<11)) == 0)
-	{
-		tecla = 11;
-	}
 	
 	return tecla;
-	
 }
-
 int aguarda_tecla(void)
 {
-	int tecla = 12;
+	int tecla = 0;
 	
-	while(le_teclas()==12)
+	while(le_teclas()==0)
 	{
 	
 	}
 	
 	tecla = le_teclas();
 	
-	while(le_teclas() != 12)
+	while(le_teclas() != 0)
 	{
 	
 	}
 	
 	return tecla;
 }
+void configura_relogio(int * var, unsigned char x, unsigned char y, int lim)
+{
+	int tecla = 0;
+	char str[30];
+	
+	while(tecla != 5)
+	{
+		lcd_goto(x,y);
+		sprintf(str,"%02d",*var);
+		lcd_wrstr(str);
+		tecla = aguarda_tecla();
+		if(tecla == 4)
+		{
+			(*var)++;
+			if(*var == lim)
+				(*var) = 0;
+		}
+		else if(tecla == 3)
+		{
+			(*var)--;
+			if(*var < 0)
+				*var = lim-1;
+		}
+		else if(tecla == 2)
+		{
+			(*var) = 0;
+		}
+	}
+}
 
+void configura_data(int * var, unsigned char x, unsigned char y, int lim)
+{
+	int tecla = 0;
+	char str[30];
+	
+	while(tecla != 5)
+	{
+		lcd_goto(x,y);
+		sprintf(str,"%02d",*var);
+		lcd_wrstr(str);
+		tecla = aguarda_tecla();
+		if(tecla == 4)
+		{
+			(*var)++;
+			if(*var == lim)
+				(*var) = 1;
+		}
+		else if(tecla == 3)
+		{
+			(*var)--;
+			if(*var < 1)
+				*var = lim-1;
+		}
+		else if(tecla == 2)
+		{
+			(*var) = 1;
+		}
+	}
+}
+
+void configura_ano(int * var)
+{
+	int tecla = 0;
+	char str[30];
+	
+	unsigned char pegador = 0;
+
+	
+	while(tecla != 5)
+	{
+		lcd_goto(12,0);
+		sprintf(str,"%04d",*var);
+		lcd_wrstr(str);
+		tecla = aguarda_tecla();
+		if(tecla == 4)
+		{
+			if(pegador == 1)
+			{
+				*var = *var + 100;
+			}
+			else
+			{
+				(*var)++;
+			}
+		}
+		else if(tecla == 3)
+		{
+			if(pegador == 1)
+			{
+				*var -= 100;
+			}
+			else
+			{
+				(*var)--;
+			}
+		}
+		else if(tecla == 2)
+		{
+			(*var) = 2000;
+		}
+		else if(tecla == 1)
+		{
+			if(pegador == 0)
+				pegador = 1;
+			else
+				pegador = 0;
+		}
+	}	
+}
 /* USER CODE END 0 */
 
 /**
@@ -274,17 +355,13 @@ int main(void)
 	
 	int dia, mes, ano, d, mm, a;
 	
-	int pegador = 0;
-	
-	int tecla;
-	
 	int n_dias = 0;
 	
 	char str[30];
 	
-	d = 31;
-	mm = 12;
-	a = 2016;
+	d = 1;
+	mm = 1;
+	a = 2000;
 	
 	h = 0;
 	m = 0;
@@ -311,50 +388,30 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_ADC_Init();
   /* USER CODE BEGIN 2 */
 	lcd_init(cursor_blink);
 	GPIOB->BSRR = (1 << 6);
 
-	/*tecla = 0;
+	configura_relogio(&h,8,1,24);
+	lcd_wrchar(':');
+	configura_relogio(&m,11,1,60);
+	lcd_wrchar(':');
+	configura_relogio(&s,14,1,60);
 	
-	while(tecla != 10)
-	{
-		lcd_goto(8,1);
-		sprintf(str,"%02d",h);
-		lcd_wrstr(str);
-		
-		tecla = aguarda_tecla();
-		
-		lcd_goto(0,0);
-		sprintf(str,"%02d",tecla);
-		lcd_wrstr(str);
-		
-		if(tecla == 11)
-			h = 0;
-		else
-		{
-			if(pegador == 0)
-			{
-				h = tecla * 10;
-				pegador = 1;
-			}
-			else if(pegador == 1)
-			{
-				h += tecla;
-				pegador = 2;
-			}
-			else if(pegador == 2)
-			{
-				
-			}
-		}
-	}*/
-
+	configura_data(&d,6,0,32);
+	lcd_wrchar('/');
+	configura_data(&mm,9,0,13);
+	lcd_wrchar('/');
+	configura_ano(&a);
+	lcd_wrchar('/');
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+	
   while (1)
   {
 		for(ano = a; ano < 9999; ano++)
@@ -421,8 +478,10 @@ void SystemClock_Config(void)
 
   /**Initializes the CPU, AHB and APB busses clocks 
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI14|RCC_OSCILLATORTYPE_HSI48;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+  RCC_OscInitStruct.HSI14State = RCC_HSI14_ON;
+  RCC_OscInitStruct.HSI14CalibrationValue = 16;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -446,6 +505,58 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief ADC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC_Init(void)
+{
+
+  /* USER CODE BEGIN ADC_Init 0 */
+
+  /* USER CODE END ADC_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC_Init 1 */
+
+  /* USER CODE END ADC_Init 1 */
+  /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
+  */
+  hadc.Instance = ADC1;
+  hadc.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+  hadc.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
+  hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc.Init.LowPowerAutoWait = DISABLE;
+  hadc.Init.LowPowerAutoPowerOff = DISABLE;
+  hadc.Init.ContinuousConvMode = DISABLE;
+  hadc.Init.DiscontinuousConvMode = DISABLE;
+  hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc.Init.DMAContinuousRequests = DISABLE;
+  hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  if (HAL_ADC_Init(&hadc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /**Configure for the selected ADC regular channel to be converted. 
+  */
+  sConfig.Channel = ADC_CHANNEL_0;
+  sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC_Init 2 */
+
+  /* USER CODE END ADC_Init 2 */
+
 }
 
 /**
