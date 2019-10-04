@@ -1,0 +1,28 @@
+--cpu Cortex-M0
+"ex3\startup_stm32f072xb.o"
+"ex3\main.o"
+"ex3\stm32f0xx_it.o"
+"ex3\stm32f0xx_hal_msp.o"
+"ex3\stm32f0xx_hal_adc.o"
+"ex3\stm32f0xx_hal_adc_ex.o"
+"ex3\stm32f0xx_hal_tim.o"
+"ex3\stm32f0xx_hal_tim_ex.o"
+"ex3\stm32f0xx_hal_uart.o"
+"ex3\stm32f0xx_hal_uart_ex.o"
+"ex3\stm32f0xx_hal_rcc.o"
+"ex3\stm32f0xx_hal_rcc_ex.o"
+"ex3\stm32f0xx_hal.o"
+"ex3\stm32f0xx_hal_i2c.o"
+"ex3\stm32f0xx_hal_i2c_ex.o"
+"ex3\stm32f0xx_hal_gpio.o"
+"ex3\stm32f0xx_hal_dma.o"
+"ex3\stm32f0xx_hal_cortex.o"
+"ex3\stm32f0xx_hal_pwr.o"
+"ex3\stm32f0xx_hal_pwr_ex.o"
+"ex3\stm32f0xx_hal_flash.o"
+"ex3\stm32f0xx_hal_flash_ex.o"
+"ex3\system_stm32f0xx.o"
+--library_type=microlib --strict --scatter "Ex3\Ex3.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "Ex3.map" -o Ex3\Ex3.axf
